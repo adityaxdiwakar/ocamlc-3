@@ -24,15 +24,16 @@ module Lexer =
             { regex = ";.*"; ctor = fun x -> Comment x };
             { regex = "0?x[0-9a-fA-F]+"; ctor = fun x -> Hex x };
             { regex = "#?-?[0-9]+"; ctor = fun x -> Num x };
+            { regex = "ADD|AND"; ctor = fun x -> Op x };
         ]
 
         let token_print x = 
             match x with
-            | Ws            -> "WS()"
+            | Ws            -> (Printf.sprintf "WS()")
             | Comment(v)    -> (Printf.sprintf "Comment(%s)" v)
             | Hex(v)        -> (Printf.sprintf "Hex(%s)" v)
             | Num(v)        -> (Printf.sprintf "Num(%s)" v)
-            | _             -> "Not recognized!"
+            | _             -> (Printf.sprintf "Unrecognized()")
         
         let lex_line line = 
             let rec lx r = 
