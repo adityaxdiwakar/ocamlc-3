@@ -24,7 +24,7 @@ module Lexer =
             { regex = ";.*"; ctor = fun x -> Comment x };
             { regex = "0?x[0-9a-fA-F]+"; ctor = fun x -> Hex x };
             { regex = "#?-?[0-9]+"; ctor = fun x -> Num x };
-            { regex = "ADD|AND"; ctor = fun x -> Op x };
+            { regex = "ADD|AND|BRn?z?p?|JMP|JSRR|JSR|LDI|LDR|LD|LEA|NOT|RET|RTI|STI|STR|ST|TRAP"; ctor = fun x -> Op x };
         ]
 
         let token_print x = 
@@ -33,6 +33,7 @@ module Lexer =
             | Comment(v)    -> (Printf.sprintf "Comment(%s)" v)
             | Hex(v)        -> (Printf.sprintf "Hex(%s)" v)
             | Num(v)        -> (Printf.sprintf "Num(%s)" v)
+            | Op(v)         -> (Printf.sprintf "Opcode(%s)" v)
             | _             -> (Printf.sprintf "Unrecognized()")
         
         let lex_line line = 
