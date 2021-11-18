@@ -62,5 +62,14 @@ module Lexer =
                     end
                 in pattern_match productions
             in lx 0
-                
+
+        let sprint_list lst = 
+            let rec sprint_list_helper l = 
+                match l with
+                | [] -> ""
+                | h :: t -> begin
+                    Printf.sprintf "; %s%s" (token_print h) 
+                        (sprint_list_helper t) end
+            in Printf.sprintf "[%s]" (sprint_list_helper lst);;
+                            
 end
