@@ -15,4 +15,5 @@ module Lexer :
         val token_print : token -> string
         val lex_line : string -> token list
         val sprint_list : token list -> string
+        val lex_file : string -> token list list
     end

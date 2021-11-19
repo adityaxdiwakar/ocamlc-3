@@ -43,8 +43,8 @@ module Lexer =
             | Label(v)      -> (Printf.sprintf "Label(%s)" v)
             | _             -> (Printf.sprintf "Unrecognized()")
         
-        let lex_line line = 
-            let rec lx r = 
+        let lex_line line: token list = 
+            let rec lx r: token list = 
                 if r == String.length line then [] else 
                 let rec pattern_match p =
                     match p with
@@ -62,6 +62,22 @@ module Lexer =
                     end
                 in pattern_match productions
             in lx 0
+
+        let get_file_lines file = 
+            let ic = open_in file in
+            let read_line () =
+                try Some (input_line ic) with End_of_file -> None in
+            let rec loop acc = 
+                match read_line () with
+                | Some x -> loop (x :: acc)
+                | None -> begin 
+                    close_in ic;
+                    List.rev acc end
+            in loop []
+
+        let lex_lines lines: token list list = List.map lex_line lines
+
+        let lex_file filename: token list list = lex_lines (get_file_lines filename)
 
         let sprint_list lst = 
             let rec sprint_list_helper l = 
