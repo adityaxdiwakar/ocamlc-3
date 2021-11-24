@@ -18,11 +18,11 @@ type opcode =
   | Trap
 
 type directive = 
-  | ORIG
-  | END
-  | FILL
-  | BLKW
-  | STRINGZ
+  | Orig
+  | End
+  | Fill
+  | Blkw
+  | Stringz
 
 type parsed_tokens =
   | Op          of opcode
@@ -30,6 +30,13 @@ type parsed_tokens =
   | Num         of int
   | Directive   of directive
   | Label       of string
+
+let directive_str_to_type = function
+  | "ORIG"    -> Orig
+  | "END"     -> End
+  | "FILL"    -> Fill
+  | "BLKW"    -> Blkw
+  | "STRINGZ" -> Stringz
 
 let opcode_str_to_type = function
   | "ADD"   -> Add
@@ -65,12 +72,18 @@ let opcode_str_to_type = function
 
 let token_imm_parse tokens = 
   let parse_indv_token = function
-    | Ws | Comment    -> None
-    | Hex(v) | Num(v) ->
-      v |> fun x -> if String.get x 0 == 'x' then "0" ^ x else x 
-    | Op(v)         -> opcode_str_to_type v
-    | Directive(v)  -> (Printf.sprintf "Directive(%s)"  v)
-    | Reg(v)        -> (Printf.sprintf "Register(%s)"   v)
-    | Label(v)      -> (Printf.sprintf "Label(%s)"      v)
-    | _             -> (Printf.sprintf "Unrecognized()"  )
-
+    | Lexer.Ws 
+    | Lexer.Comment       -> None
+    | Lexer.Hex(v)        (* interpretable as number *)
+    | Lexer.Num(v)        -> Number begin
+      String.get v 0
+      |> fun x -> if x == 'x' then "0" ^ v else v end
+    | Lexer.Op(v)         -> opcode_str_to_type v
+    | Lexer.Directive(v)  -> directive_str_to_type v
+    | Lexer.Reg(v)        -> Register begin
+      v |> fun x -> String.get x 1 
+        |> int_of_char - int_of_char '0' end
+    | Lexer.Label(v)      -> Label begin
+      v |> String.length 
+        |> fun x -> String.sub v 0 (x - 1) end
+  in List.map parse_indv_token tokens
