@@ -1,3 +1,5 @@
 let lexed_file = Lexer.lex_file "input.asm" in
-let mapped_lexed_file = List.map (List.map Lexer.token_print) lexed_file in
-List.iter (List.iter (Printf.printf "%s\n")) mapped_lexed_file
+let mapped_lexed_file = (Lexer.token_print 
+                        |> List.map
+                        |> List.map) lexed_file in
+(Printf.printf "%s\n" |> List.iter |> List.iter) mapped_lexed_file
