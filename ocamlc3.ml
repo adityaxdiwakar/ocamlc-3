@@ -1,6 +1,4 @@
-let lexed_file = Lexer.lex_file "input.asm" in
-let token_imm_parses = match lexed_file with
-| []        -> raise Not_found
-| hd :: _   -> Parser.token_imm_parse hd in
-let str_parsed_tokens = List.map Parser.str_token token_imm_parses in
-List.iter (Printf.printf "%s\n") str_parsed_tokens
+let lex = Lexer.lex_file "input.asm" 
+  |> List.hd (* unsafe *)
+  |> Parser.token_imm_parse in
+Printf.printf "%s\n" (Parser.show_parser_list (lex));;

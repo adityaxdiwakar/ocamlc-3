@@ -16,6 +16,7 @@ type opcode =
   | Str
   | St
   | Trap
+  [@@deriving show]
 
 type directive = 
   | Orig
@@ -23,13 +24,15 @@ type directive =
   | Fill
   | Blkw
   | Stringz
+  [@@deriving show]
 
-type parsed_tokens =
+type parsed_token =
   | Op          of opcode
   | Register    of int
   | Num         of int
   | Directive   of directive
   | Label       of string
+  [@@deriving show]
 
 let directive_str_to_type = function
   | "ORIG"    -> Orig
@@ -73,6 +76,8 @@ let opcode_str_to_type = function
 
   | _       -> raise Not_found
 
+type parser_list = parsed_token list [@@deriving show]
+
 let token_imm_parse tokens = 
   let parse_indv_token = function
 
@@ -109,7 +114,3 @@ let token_imm_parse tokens =
       end end
 
   in List.filter_map parse_indv_token tokens
-
-(* TODO: implement str_token *)
-let str_token = function
-  | _     -> Printf.sprintf "Unrecognized!"
