@@ -37,6 +37,7 @@ let directive_str_to_type = function
   | "FILL"    -> Fill
   | "BLKW"    -> Blkw
   | "STRINGZ" -> Stringz
+  | _         -> raise Not_found
 
 let opcode_str_to_type = function
   | "ADD"   -> Add
@@ -70,31 +71,45 @@ let opcode_str_to_type = function
   (* TODO: extend to more traps *)
   | "TRAP"  -> Trap
 
+  | _       -> raise Not_found
+
 let token_imm_parse tokens = 
   let parse_indv_token = function
 
     (* ignore whitespace *)
     | Lexer.Ws 
-    | Lexer.Comment       -> None
+    | Lexer.Comment(_)    -> None
+
+    (* TODO: don't ignore strings *)
+    | Lexer.Str(_)        -> None
 
     (* parse numbers *)
     | Lexer.Hex(v)        (* interpretable as number *)
-    | Lexer.Num(v)        -> Number begin
-      String.get v 0
-      |> fun x -> if x == 'x' then "0" ^ v else v end
+    | Lexer.Num(v)        -> Some begin 
+      Num begin String.get v 0 
+        |> (fun x -> if x == 'x' then "0"^v else v)
+        |> int_of_string
+      end end 
 
     (* parse opcodes, directives *)
-    | Lexer.Op(v)         -> opcode_str_to_type v
-    | Lexer.Directive(v)  -> directive_str_to_type v
+    | Lexer.Op(v)         -> Some (Op (opcode_str_to_type v))
+    | Lexer.Directive(v)  -> Some (Directive (directive_str_to_type v))
 
     (* parse register value, not checking for \in [0,7] *)
-    | Lexer.Reg(v)        -> Register begin
-      v |> fun x -> String.get x 1 
-        |> int_of_char - int_of_char '0' end
+    | Lexer.Reg(v)        -> Some begin
+      Register begin String.get v 1
+        |> fun x -> int_of_char x - int_of_char '0' 
+      end end
 
     (* parse label name, removing ':' *)
-    | Lexer.Label(v)      -> Label begin
-      v |> String.length 
-        |> fun x -> String.sub v 0 (x - 1) end
+    | Lexer.Label(v)      -> Some begin 
+      Label begin v 
+        |> String.length 
+        |> fun x -> String.sub v 0 (x - 1) 
+      end end
 
-  in List.map parse_indv_token tokens
+  in List.filter_map parse_indv_token tokens
+
+(* TODO: implement str_token *)
+let str_token = function
+  | _     -> Printf.sprintf "Unrecognized!"
