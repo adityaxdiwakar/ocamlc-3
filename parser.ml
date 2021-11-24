@@ -72,18 +72,29 @@ let opcode_str_to_type = function
 
 let token_imm_parse tokens = 
   let parse_indv_token = function
+
+    (* ignore whitespace *)
     | Lexer.Ws 
     | Lexer.Comment       -> None
+
+    (* parse numbers *)
     | Lexer.Hex(v)        (* interpretable as number *)
     | Lexer.Num(v)        -> Number begin
       String.get v 0
       |> fun x -> if x == 'x' then "0" ^ v else v end
+
+    (* parse opcodes, directives *)
     | Lexer.Op(v)         -> opcode_str_to_type v
     | Lexer.Directive(v)  -> directive_str_to_type v
+
+    (* parse register value, not checking for \in [0,7] *)
     | Lexer.Reg(v)        -> Register begin
       v |> fun x -> String.get x 1 
         |> int_of_char - int_of_char '0' end
+
+    (* parse label name, removing ':' *)
     | Lexer.Label(v)      -> Label begin
       v |> String.length 
         |> fun x -> String.sub v 0 (x - 1) end
+
   in List.map parse_indv_token tokens
