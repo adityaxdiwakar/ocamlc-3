@@ -122,11 +122,8 @@ let rec match_register_grp n tokens =
   match tokens, n with
   | ([], _)                         -> raise Not_found 
 
-  (* only one register left, found and no comma after *)
-  | (Register(i) :: [], 1)          -> [Register i]
-
-  (* only one register left, found a comma after *)
-  | (Register(_) :: Comma :: _, 1)  -> raise Not_found 
+  (* only one register left *) 
+  | (Register(i) :: _, 1)           -> [Register i]
 
   (* many registers left, found a comma after *)
   | (Register(i) :: Comma :: tl, _) -> 
