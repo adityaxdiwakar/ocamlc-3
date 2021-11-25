@@ -26,7 +26,7 @@ let productions = [
     ^ "|NOT|RET|RTI|STI|STR|ST|TRAP"; ctor = fun x -> Op x };
   { regex = "\\.ORIG|\\.END|\\.FILL|\\.BLKW|\\.STRINGZ"; 
     ctor = fun x -> Directive x };
-  { regex = "[rR][0-6]"; ctor = fun x -> Reg x };
+  { regex = "[rR][0-7]"; ctor = fun x -> Reg x };
   { regex = "[a-zA-Z0-9_-]+:"; ctor = fun x -> Label x };
 ]
 
