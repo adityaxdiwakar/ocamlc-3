@@ -1,0 +1,5 @@
+(executable
+ (name ocamlc3)
+ (libraries re.pcre)
+ (preprocess (pps ppx_deriving.show ppx_deriving.std)))
+
