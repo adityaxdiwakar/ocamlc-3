@@ -76,8 +76,6 @@ let opcode_str_to_type = function
 
   | _       -> raise Not_found
 
-type parser_list = parsed_token list [@@deriving show]
-
 let token_imm_parse tokens = 
   let parse_indv_token = function
 

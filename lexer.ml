@@ -10,6 +10,7 @@ type token =
   | Directive of string
   | Reg of string
   | Label of string
+  [@@deriving show]
 
 type 't production = { 
   regex: string;
@@ -29,20 +30,8 @@ let productions = [
   { regex = "[a-zA-Z0-9_-]+:"; ctor = fun x -> Label x };
 ]
 
-let token_print x = 
-  match x with
-  | Ws            -> (Printf.sprintf "WS()"            )
-  | Comment(v)    -> (Printf.sprintf "Comment(%s)"    v)
-  | Hex(v)        -> (Printf.sprintf "Hex(%s)"        v)
-  | Num(v)        -> (Printf.sprintf "Num(%s)"        v)
-  | Op(v)         -> (Printf.sprintf "Opcode(%s)"     v)
-  | Directive(v)  -> (Printf.sprintf "Directive(%s)"  v)
-  | Reg(v)        -> (Printf.sprintf "Register(%s)"   v)
-  | Label(v)      -> (Printf.sprintf "Label(%s)"      v)
-  | _             -> (Printf.sprintf "Unrecognized()"  )
-
-let lex_line line: token list = 
-  let rec lx r: token list = 
+let lex_line line = 
+  let rec lx r = 
     if r == String.length line then [] else 
     let rec pattern_match p =
       match p with
@@ -66,13 +55,5 @@ let get_file_lines file =
     | None -> close_in ic; List.rev acc
   in loop []
 
-let lex_lines lines: token list list = List.map lex_line lines
-
-let lex_file filename: token list list = lex_lines (get_file_lines filename)
-
-let sprint_list lst = 
-  let rec splist l = 
-    match l with
-    | [] -> ""
-    | h :: t -> Printf.sprintf "; %s%s" (token_print h) (splist t)
-  in Printf.sprintf "[%s]" (splist lst);;
+let lex_lines lines = List.map lex_line lines
+let lex_file filename = lex_lines (get_file_lines filename)

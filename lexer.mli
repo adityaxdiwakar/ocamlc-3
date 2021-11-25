@@ -1,5 +1,5 @@
-type token =
-  Ws
+type token =         
+    Ws
   | Comment of string
   | Hex of string
   | Num of string
@@ -8,9 +8,9 @@ type token =
   | Directive of string
   | Reg of string
   | Label of string
-type 't production = { regex : string; ctor : 't -> token; }
-val productions : string production list
-val token_print : token -> string
+val pp_token :
+  Ppx_deriving_runtime.Format.formatter -> token -> Ppx_deriving_runtime.unit
+val show_token : token -> Ppx_deriving_runtime.string
 val lex_line : string -> token list
-val sprint_list : token list -> string
+val lex_lines : string list -> token list list
 val lex_file : string -> token list list
