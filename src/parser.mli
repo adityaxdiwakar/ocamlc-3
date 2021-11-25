@@ -31,7 +31,8 @@ val show_directive : directive -> Ppx_deriving_runtime.string
 
 (* parsed token type declaration and deriving *)
 type parsed_token =
-    Op of opcode
+    Comma
+  | Op of opcode
   | Register of int
   | Num of int
   | Directive of directive
@@ -42,3 +43,4 @@ val pp_parsed_token :
 val show_parsed_token : parsed_token -> Ppx_deriving_runtime.string
 
 val token_imm_parse : Lexer.token list -> parsed_token list
+val match_register_grp : int -> parsed_token list -> parsed_token list

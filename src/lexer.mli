@@ -1,5 +1,6 @@
 type token =         
     Ws
+  | Comma
   | Comment of string
   | Hex of string
   | Num of string

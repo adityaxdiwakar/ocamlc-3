@@ -27,6 +27,7 @@ type directive =
   [@@deriving show]
 
 type parsed_token =
+  | Comma
   | Op          of opcode
   | Register    of int
   | Num         of int
@@ -83,6 +84,9 @@ let token_imm_parse tokens =
     | Lexer.Ws 
     | Lexer.Comment(_)    -> None
 
+    (* preserve commas *)
+    | Lexer.Comma         -> Some Comma
+
     (* TODO: don't ignore strings *)
     | Lexer.Str(_)        -> None
 
@@ -112,3 +116,21 @@ let token_imm_parse tokens =
       end end
 
   in List.filter_map parse_indv_token tokens
+
+let rec match_register_grp n tokens = 
+  (* TODO: make exceptions more verbose *)
+  match tokens, n with
+  | ([], _)                         -> raise Not_found 
+
+  (* only one register left, found and no comma after *)
+  | (Register(i) :: [], 1)          -> [Register i]
+
+  (* only one register left, found a comma after *)
+  | (Register(_) :: Comma :: _, 1)  -> raise Not_found 
+
+  (* many registers left, found a comma after *)
+  | (Register(i) :: Comma :: tl, _) -> 
+      Register i :: match_register_grp (n - 1) tl
+
+  (* any other formula is invalid *)
+  | (_, _)                -> raise Not_found 

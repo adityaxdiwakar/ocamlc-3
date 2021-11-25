@@ -1,1 +1,1 @@
-ADD R6, R7, R5 ; this is a comment
+R6, R7, R4, R2

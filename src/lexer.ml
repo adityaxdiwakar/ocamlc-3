@@ -2,6 +2,7 @@ open Re;;
 
 type token = 
   | Ws
+  | Comma
   | Comment of string
   | Hex of string
   | Num of string
@@ -18,7 +19,8 @@ type 't production = {
 }
 
 let productions = [
-  { regex = "[\\s,]+"; ctor = fun _ -> Ws };
+  { regex = "[\\s]+"; ctor = fun _ -> Ws };
+  { regex = ","; ctor = fun _ -> Comma };
   { regex = ";.*"; ctor = fun x -> Comment x };
   { regex = "0?x[0-9a-fA-F]+"; ctor = fun x -> Hex x };
   { regex = "#?-?[0-9]+"; ctor = fun x -> Num x };
