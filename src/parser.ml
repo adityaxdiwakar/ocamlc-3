@@ -108,9 +108,8 @@ let token_imm_parse tokens =
 
     (* parse register value, not checking for \in [0,7] *)
     | Lexer.Reg(v)        -> Some begin
-      Register begin String.get v 1
-        |> fun x -> int_of_char x - int_of_char '0' 
-      end end
+        Register (int_of_char (String.get v 1) - int_of_char '0')
+      end
 
     (* parse label name, removing ':' *)
     | Lexer.Label(v)      -> Some begin 
@@ -134,9 +133,9 @@ let rec match_register_grp n tokens =
   (* any other formula is invalid *)
   | (_, _)                          -> raise Not_found 
 
-let match_register_imm_grp tokens =
+let match_register_imm_grp n tokens =
   (* would look like Rx, Ry, Num(z) *)
-  let reg_grp = match_register_grp 2 tokens in
+  let reg_grp = match_register_grp n tokens in
   match tokens with
   | _ :: _ :: _ ::  Comma :: Num(v) :: _  
       -> reg_grp @ [Num v] (* `@` joins have bad performance, but n = 3 *)
