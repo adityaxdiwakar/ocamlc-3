@@ -1,21 +1,10 @@
 type opcode =
-  | Add
-  | And
-  | Br of int
-  | Jmp
-  | Jsrr
-  | Jsr
-  | Ldi
-  | Ldr
-  | Ld
-  | Lea
-  | Not
-  | Ret
-  | Rti
-  | Sti
-  | Str
-  | St
-  | Trap
+  | Add   | And   | Br of int
+  | Jmp   | Jsrr  | Jsr
+  | Ldi   | Ldr   | Ld
+  | Lea   | Not   | Ret
+  | Rti   | Sti   | Str
+  | St    | Trap
   [@@deriving show]
 
 type directive = 
