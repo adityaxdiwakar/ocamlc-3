@@ -7,8 +7,3 @@ Printf.printf "%s\n" begin
   |> Parser.match_register_grp 4  (* match a group of 5 registers *)
   |> show_parsed_list             (* print *)
 end
-
-
-
-
-

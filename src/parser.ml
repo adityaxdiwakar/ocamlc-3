@@ -120,8 +120,6 @@ let token_imm_parse tokens =
 let rec match_register_grp n tokens = 
   (* TODO: make exceptions more verbose *)
   match tokens, n with
-  | ([], _)                         -> raise Not_found 
-
   (* only one register left *) 
   | (Register(i) :: _, 1)           -> [Register i]
 
