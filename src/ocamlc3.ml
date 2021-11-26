@@ -4,6 +4,6 @@ Printf.printf "%s\n" begin
   |> Lexer.lex_file               (* lex file *)
   |> List.hd                      (* get head, unsafe *)
   |> Parser.token_imm_parse       (* parse *)
-  |> Parser.match_register_grp 4  (* match a group of 5 registers *)
+  |> Parser.match_register_imm_grp 
   |> show_parsed_list             (* print *)
 end

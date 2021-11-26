@@ -94,9 +94,13 @@ let token_imm_parse tokens =
     | Lexer.Hex(v)        (* interpretable as number *)
     | Lexer.Num(v)        -> Some begin 
       Num begin String.get v 0 
-        |> (fun x -> if x == 'x' then "0"^v else v)
-        |> int_of_string
-      end end 
+        |> begin function
+           | 'x' -> "0" ^ v 
+           | '#' -> v |> String.length 
+                      |> fun x -> String.sub v 1 (x - 1)
+           | _   -> raise Not_found end
+        |> int_of_string 
+      end end
 
     (* parse opcodes, directives *)
     | Lexer.Op(v)         -> Some (Op (opcode_str_to_type v))
@@ -129,3 +133,11 @@ let rec match_register_grp n tokens =
 
   (* any other formula is invalid *)
   | (_, _)                          -> raise Not_found 
+
+let match_register_imm_grp tokens =
+  (* would look like Rx, Ry, Num(z) *)
+  let reg_grp = match_register_grp 2 tokens in
+  match tokens with
+  | _ :: _ :: _ ::  Comma :: Num(v) :: _  
+      -> reg_grp @ [Num v] (* `@` joins have bad performance, but n = 3 *)
+  | _ -> raise Not_found
