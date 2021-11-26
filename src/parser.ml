@@ -98,7 +98,7 @@ let token_imm_parse tokens =
            | 'x' -> "0" ^ v 
            | '#' -> v |> String.length 
                       |> fun x -> String.sub v 1 (x - 1)
-           | _   -> raise Not_found end
+           | _   -> v end
         |> int_of_string 
       end end
 
