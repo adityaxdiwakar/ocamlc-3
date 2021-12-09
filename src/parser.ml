@@ -35,7 +35,7 @@ let directive_str_to_type = function
 let opcode_str_to_type = function
   | "ADD"   -> Add
   | "AND"   -> And
-
+ 
   (* match branch statements *)
   | "BRp"   -> Br 1
   | "BRz"   -> Br 2
@@ -113,19 +113,36 @@ let rec match_register_grp n tokens =
   (* TODO: make exceptions more verbose *)
   match tokens, n with
   (* only one register left *) 
-  | (Register(i) :: _, 1)           -> [Register i]
+  | (Register(i) :: _, 1)           -> Some [Register i]
 
   (* many registers left, found a comma after *)
   | (Register(i) :: Comma :: tl, _) -> 
-      Register i :: match_register_grp (n - 1) tl
+    match_register_grp (n-1) tl 
+    |> begin function 
+        | None -> None 
+        | Some v -> Some (Register i :: v) end
 
   (* any other formula is invalid *)
-  | (_, _)                          -> raise Not_found 
+  | (_, _)                          -> None
 
 let match_register_imm_grp n tokens =
   (* would look like Rx, Ry, Num(z) *)
   let reg_grp = match_register_grp n tokens in
+  match (reg_grp, tokens) with
+  | Some grp,  _ :: _ :: _ ::  Comma :: Num(v) :: _
+      -> Some (grp @ [Num v]) (* `@` joins have bad performance, but n = 3 *)
+  | _ -> None 
+
+let full_parse_line tokens = 
   match tokens with
-  | _ :: _ :: _ ::  Comma :: Num(v) :: _  
-      -> reg_grp @ [Num v] (* `@` joins have bad performance, but n = 3 *)
-  | _ -> raise Not_found
+  | Op v :: tl when v == And || v == Add -> begin
+      let groups = List.filter_map
+          (fun x -> x) 
+          [match_register_grp 3 tl; match_register_imm_grp 2 tl] in
+      match groups with 
+      | [] -> []
+      | hd :: _ -> (Op v) :: hd end
+  | _ :: _          
+  | []              -> raise Not_found
+
+let full_parse_lines tokens_list = List.map full_parse_line tokens_list
