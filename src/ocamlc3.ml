@@ -1,4 +1,4 @@
-type parsed_list = Parser.parsed_token list [@@deriving show];;
+type parsed_list = Parser.token list [@@deriving show];;
 List.map (Printf.printf "%s\n") begin
   "input.asm"
   |> Lexer.lex_file                   (* lex each line *)

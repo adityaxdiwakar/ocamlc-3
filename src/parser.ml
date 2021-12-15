@@ -15,7 +15,7 @@ type directive =
   | Stringz
   [@@deriving show]
 
-type parsed_token =
+type token =
   | Comma
   | Op          of opcode
   | Register    of int
@@ -135,14 +135,82 @@ let match_register_imm_grp n tokens =
 
 let full_parse_line tokens = 
   match tokens with
-  | Op v :: tl when v == And || v == Add -> begin
+
+  (* ADD or AND following the form of 
+   *  (Op And) (Register) (Register) (Register)
+   *  (Op And) (Register) (Register) (Num)
+   *  (Op Add) (Register) (Register) (Register)
+   *  (Op Add) (Register) (Register) (Num)
+   * *)
+
+  | (Op And as v) :: tl 
+  | (Op Add as v) :: tl -> begin
       let groups = List.filter_map
           (fun x -> x) 
           [match_register_grp 3 tl; match_register_imm_grp 2 tl] in
       match groups with 
       | [] -> []
-      | hd :: _ -> (Op v) :: hd end
-  | _ :: _          
-  | []              -> raise Not_found
+      | hd :: _ -> v :: hd end
+  
+  (* NOT following the form of
+   *  (Op Not) (Register) (Register)
+   * *)
+
+  | (Op Not as v) :: tl -> begin
+      match tl with
+      | (Register _ as w) :: Comma :: (Register _ as x) :: _  -> [v; w; x]
+      | _ -> raise Not_found end
+
+
+  (* BR, JMP, JSR, or JSRR following the form of
+   *  (Op Br (n)) (Num)
+   *  (Op Jmp) (Register)
+   *  (Op Jsr) (Num)
+   *  (Op Jsrr) (Register)
+   * *)
+
+  | Op (Br _  as v) :: tl 
+  | Op (Jmp   as v) :: tl   
+  | Op (Jsr   as v) :: tl 
+  | Op (Jsrr  as v) :: tl 
+  | Op (Trap  as v) :: tl -> begin
+      match tl with
+      | (Num _) as w :: _ -> begin match v with 
+          | Br _ | Jsr | Trap -> [Op v; w]
+          | _ -> raise Not_found end
+
+      | (Register _) as w :: _ -> begin match v with
+          | Jmp | Jsrr -> [Op v; w]
+          | _ -> raise Not_found end
+
+      | _ -> raise Not_found
+    end
+
+  | (Op Ld  as v) :: tl
+  | (Op Ldi as v) :: tl
+  | (Op Lea as v) :: tl
+  | (Op St  as v) :: tl
+  | (Op Sti as v) :: tl -> begin
+      match tl with
+      | (Register _ as w) :: Comma :: (Num _ as x) :: _ -> [v; w; x] 
+      | _ -> raise Not_found end
+
+  | (Op Str as v) :: tl
+  | (Op Ldr as v) :: tl -> begin
+      match tl with
+      | (Register _ as w) :: Comma :: (Register _ as x) :: Comma 
+        :: (Num _ as y) :: _ -> [v; w; x; y] 
+      | _ -> raise Not_found end
+
+  | (Op Ret as v) :: _ 
+  | (Op Rti as v) :: _ -> [v]
+
+  (* TODO: Directive, Label should not raise `Not_found` *)
+  | Comma       :: _
+  | Register  _ :: _ 
+  | Num       _ :: _ 
+  | Directive _ :: _  
+  | Label     _ :: _ 
+  | [] -> raise Not_found
 
 let full_parse_lines tokens_list = List.map full_parse_line tokens_list
