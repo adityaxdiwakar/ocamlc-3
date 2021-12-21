@@ -27,7 +27,8 @@ let directive_str_to_type = function
   | ".FILL"     -> Fill
   | ".BLKW"     -> Blkw
   | ".STRINGZ"  -> Stringz
-  | _           -> raise Not_found
+  | (_ as s)    -> failwith begin  
+      Printf.sprintf "Invalid directive %s" s end
 
 let opcode_str_to_type = function
   | "ADD"   -> Add
