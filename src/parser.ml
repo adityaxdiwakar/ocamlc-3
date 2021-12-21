@@ -8,11 +8,8 @@ type opcode =
   [@@deriving show]
 
 type directive = 
-  | Orig
-  | End
-  | Fill
-  | Blkw
-  | Stringz
+  | Orig  | End   | Fill
+  | Blkw  | Stringz
   [@@deriving show]
 
 type token =
@@ -25,12 +22,12 @@ type token =
   [@@deriving show]
 
 let directive_str_to_type = function
-  | "ORIG"    -> Orig
-  | "END"     -> End
-  | "FILL"    -> Fill
-  | "BLKW"    -> Blkw
-  | "STRINGZ" -> Stringz
-  | _         -> raise Not_found
+  | ".ORIG"     -> Orig
+  | ".END"      -> End
+  | ".FILL"     -> Fill
+  | ".BLKW"     -> Blkw
+  | ".STRINGZ"  -> Stringz
+  | _           -> raise Not_found
 
 let opcode_str_to_type = function
   | "ADD"   -> Add
@@ -205,11 +202,16 @@ let full_parse_line tokens =
   | (Op Ret as v) :: _ 
   | (Op Rti as v) :: _ -> [v]
 
-  (* TODO: Directive, Label should not raise `Not_found` *)
+  | Directive v :: tl -> begin
+      match v, tl with
+      | Orig, (Num _ as w) :: _ -> [Directive v; w]
+      | End, _                  -> [Directive v] 
+      | _                       -> raise Not_found end
+
+  (* TODO: Label should not raise `Not_found` *)
   | Comma       :: _
   | Register  _ :: _ 
   | Num       _ :: _ 
-  | Directive _ :: _  
   | Label     _ :: _ 
   | [] -> raise Not_found
 
