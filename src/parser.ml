@@ -21,6 +21,8 @@ type token =
   | Label       of string
   [@@deriving show]
 
+type token_list = token list [@@deriving show]
+
 let directive_str_to_type = function
   | ".ORIG"     -> Orig
   | ".END"      -> End
@@ -31,38 +33,39 @@ let directive_str_to_type = function
       Printf.sprintf "Invalid directive %s" s end
 
 let opcode_str_to_type = function
-  | "ADD"   -> Add
-  | "AND"   -> And
+  | "ADD"     -> Add
+  | "AND"     -> And
  
   (* match branch statements *)
-  | "BRp"   -> Br 1
-  | "BRz"   -> Br 2
-  | "BRzp"  -> Br 3
-  | "BRn"   -> Br 4
-  | "BRnp"  -> Br 5
-  | "BRnz"  -> Br 6
+  | "BRp"     -> Br 1
+  | "BRz"     -> Br 2
+  | "BRzp"    -> Br 3
+  | "BRn"     -> Br 4
+  | "BRnp"    -> Br 5
+  | "BRnz"    -> Br 6
   | "BRnzp" (* synonymous with "BR" *)
-  | "BR"    -> Br 7
+  | "BR"      -> Br 7
   (* finish matching branch statements *)
 
-  | "JMP"   -> Jmp
-  | "JSRR"  -> Jsrr
-  | "JSR"   -> Jsr
-  | "LDI"   -> Ldi
-  | "LDR"   -> Ldr
-  | "LD"    -> Ld
-  | "LEA"   -> Lea
-  | "NOT"   -> Not
-  | "RET"   -> Ret
-  | "RTI"   -> Rti
-  | "STI"   -> Sti
-  | "STR"   -> Str
-  | "ST"    -> St
+  | "JMP"     -> Jmp
+  | "JSRR"    -> Jsrr
+  | "JSR"     -> Jsr
+  | "LDI"     -> Ldi
+  | "LDR"     -> Ldr
+  | "LD"      -> Ld
+  | "LEA"     -> Lea
+  | "NOT"     -> Not
+  | "RET"     -> Ret
+  | "RTI"     -> Rti
+  | "STI"     -> Sti
+  | "STR"     -> Str
+  | "ST"      -> St
 
   (* TODO: extend to more traps *)
-  | "TRAP"  -> Trap
+  | "TRAP"    -> Trap
 
-  | _       -> raise Not_found
+  | (_ as s)  -> failwith begin
+      Printf.sprintf "Invalid opcode %s" s end
 
 let token_imm_parse tokens = 
   let parse_indv_token = function
@@ -172,15 +175,35 @@ let full_parse_line tokens =
   | (Op St  as v) :: tl
   | (Op Sti as v) :: tl -> begin
       match tl with
-      | (Register _ as w) :: Comma :: (Num _ as x) :: _ -> [v; w; x] 
-      | _ -> raise Not_found end
+      | (Register _ as w) :: Comma :: (Num _ as x) :: [] -> [v; w; x] 
+      | (_ as tl) -> failwith begin
+          Printf.sprintf "%s should be followed by:\n\t%s, but found:\n\t%s"
+          (* token *) 
+            (show_token v) 
+          (* proper format for this instruction *)
+            "[Parser.Register; Parser.Comma; Parser.Num]"
+          (* input/wrong list of tokens *)
+            (show_token_list tl)
+        end
+    end
+
 
   | (Op Str as v) :: tl
   | (Op Ldr as v) :: tl -> begin
       match tl with
       | (Register _ as w) :: Comma :: (Register _ as x) :: Comma 
         :: (Num _ as y) :: _ -> [v; w; x; y] 
-      | _ -> raise Not_found end
+      | (_ as tl) -> failwith begin
+          Printf.sprintf "%s should be followed by:\n\t%s, but found:\n\t%s"
+          (* token *) 
+            (show_token v) 
+          (* proper format for this instruction *)
+            ("[Parser.Register; Parser.Comma; Parser.Register;\n\t\t"
+            ^ "Parser.Comma; Parser.Num]")
+          (* input/wrong list of tokens *)
+            (show_token_list tl)
+        end
+    end
 
   | (Op Ret as v) :: _ 
   | (Op Rti as v) :: _ -> [v]
