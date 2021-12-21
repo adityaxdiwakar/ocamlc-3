@@ -106,30 +106,6 @@ let token_imm_parse tokens =
 
   in List.filter_map parse_indv_token tokens
 
-let rec match_register_grp n tokens = 
-  (* TODO: make exceptions more verbose *)
-  match tokens, n with
-  (* only one register left *) 
-  | (Register(i) :: _, 1)           -> Some [Register i]
-
-  (* many registers left, found a comma after *)
-  | (Register(i) :: Comma :: tl, _) -> 
-    match_register_grp (n-1) tl 
-    |> begin function 
-        | None -> None 
-        | Some v -> Some (Register i :: v) end
-
-  (* any other formula is invalid *)
-  | (_, _)                          -> None
-
-let match_register_imm_grp n tokens =
-  (* would look like Rx, Ry, Num(z) *)
-  let reg_grp = match_register_grp n tokens in
-  match (reg_grp, tokens) with
-  | Some grp,  _ :: _ :: _ ::  Comma :: Num(v) :: _
-      -> Some (grp @ [Num v]) (* `@` joins have bad performance, but n = 3 *)
-  | _ -> None 
-
 let full_parse_line tokens = 
   match tokens with
 
@@ -142,12 +118,18 @@ let full_parse_line tokens =
 
   | (Op And as v) :: tl 
   | (Op Add as v) :: tl -> begin
-      let groups = List.filter_map
-          (fun x -> x) 
-          [match_register_grp 3 tl; match_register_imm_grp 2 tl] in
-      match groups with 
-      | [] -> []
-      | hd :: _ -> v :: hd end
+      match tl with
+      |    (Register _ as w) :: Comma 
+        :: (Register _ as x) :: Comma
+        :: third :: [] -> begin 
+       match third with
+       | (Register _) -> [v; w; x; third]
+       | (Num _)      -> [v; w; x; third]
+       | _            -> raise Not_found
+     end
+      | _ -> raise Not_found
+   end
+
   
   (* NOT following the form of
    *  (Op Not) (Register) (Register)
@@ -155,7 +137,7 @@ let full_parse_line tokens =
 
   | (Op Not as v) :: tl -> begin
       match tl with
-      | (Register _ as w) :: Comma :: (Register _ as x) :: _  -> [v; w; x]
+      | (Register _ as w) :: Comma :: (Register _ as x) :: []  -> [v; w; x]
       | _ -> raise Not_found end
 
 

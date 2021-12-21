@@ -3,12 +3,12 @@
     ADD     R4, R0, R2
     AND     R3, R5, R4	; both ADD and AND work
 
-    ; not 
-    NOT R3, R4
-
     ; with two registers and immediate
     ADD     R2, R5, #-52
     AND     R1, R1, x313
+
+    ; not 
+    NOT R3, R4
 
     ; branching 
     BRn     13412

@@ -1,5 +1,7 @@
 open Re;;
 
+exception Token_not_recognized of string
+
 type token = 
   | Ws
   | Comma
@@ -37,7 +39,8 @@ let lex_line line =
     if r == String.length line then [] else 
     let rec pattern_match p =
       match p with
-      | []   -> raise Not_found
+      | []   -> raise (Token_not_recognized begin 
+          Printf.sprintf "Unrecognized %s" (String.trim line) end)
       | { regex = reg; ctor = ctor } :: tail -> begin
         match exec (Pcre.regexp reg) line ~pos:r with
         | exception Not_found -> pattern_match tail
