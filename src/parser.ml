@@ -110,6 +110,17 @@ let token_imm_parse tokens =
 
   in List.filter_map parse_indv_token tokens
 
+let fail_w_token token fmt lst =
+  failwith begin 
+    Printf.sprintf "%s should be followed by:\n\t%s, but found:\n%s\n"
+    (* token *) 
+      (show_token token) 
+    (* proper format for this instruction *)
+      fmt
+    (* input/wrong list of tokens *)
+      (show_token_list lst)
+  end
+
 let full_parse_line tokens = 
   match tokens with
 
@@ -122,16 +133,18 @@ let full_parse_line tokens =
 
   | (Op And as v) :: tl 
   | (Op Add as v) :: tl -> begin
+      let fmt = "[Parser.Register; Parser.Comma; Parser.Register; "
+      ^ "Parser.Comma;\n\tParser.Register OR Parser.Num]" in 
       match tl with
-      |    (Register _ as w) :: Comma 
+      | (Register _ as w) :: Comma 
         :: (Register _ as x) :: Comma
         :: third :: [] -> begin 
-       match third with
-       | (Register _) -> [v; w; x; third]
-       | (Num _)      -> [v; w; x; third]
-       | _            -> raise Not_found
-     end
-      | _ -> raise Not_found
+        match third with
+        | (Register _) -> [v; w; x; third]
+        | (Num _)      -> [v; w; x; third]
+        | _            -> fail_w_token v fmt tl
+      end
+      | _ -> fail_w_token v fmt tl
    end
 
   
@@ -141,9 +154,12 @@ let full_parse_line tokens =
 
   | (Op Not as v) :: tl -> begin
       match tl with
-      | (Register _ as w) :: Comma :: (Register _ as x) :: []  -> [v; w; x]
-      | _ -> raise Not_found end
-
+      | (Register _ as w) :: Comma :: (Register _ as x) :: [] -> [v; w; x]
+      | _ -> begin
+        let fmt = "[Parser.Register; Parser.Comma; Parser.Register]" in
+        fail_w_token v fmt tl
+      end
+    end
 
   (* BR, JMP, JSR, or JSRR following the form of
    *  (Op Br (n)) (Num)
@@ -157,16 +173,24 @@ let full_parse_line tokens =
   | Op (Jsr   as v) :: tl 
   | Op (Jsrr  as v) :: tl 
   | Op (Trap  as v) :: tl -> begin
+      let ov = Op v in 
       match tl with
-      | (Num _) as w :: _ -> begin match v with 
-          | Br _ | Jsr | Trap -> [Op v; w]
-          | _ -> raise Not_found end
+      | (Num _) as w :: _ -> begin 
+          match v with 
+          | Br _ | Jsr | Trap -> [ov; w]
+          | _ -> fail_w_token w "[Parser.Num]" tl end
 
-      | (Register _) as w :: _ -> begin match v with
-          | Jmp | Jsrr -> [Op v; w]
-          | _ -> raise Not_found end
+      | (Register _) as w :: _ -> begin 
+          match v with
+          | Jmp | Jsrr -> [ov; w]
+          | _ -> fail_w_token w "[Parser.Register]" tl end
 
-      | _ -> raise Not_found
+      | _ -> begin 
+          match v with
+          | Br _  | Jsr | Trap  -> fail_w_token ov "[Parser.Num]" tl
+          | Jmp   | Jsrr        -> fail_w_token ov "[Parser.Register]" tl
+          | _                   -> raise (Failure "Unreachable")
+        end
     end
 
   | (Op Ld  as v) :: tl
@@ -176,49 +200,54 @@ let full_parse_line tokens =
   | (Op Sti as v) :: tl -> begin
       match tl with
       | (Register _ as w) :: Comma :: (Num _ as x) :: [] -> [v; w; x] 
-      | (_ as tl) -> failwith begin
-          Printf.sprintf "%s should be followed by:\n\t%s, but found:\n\t%s"
-          (* token *) 
-            (show_token v) 
-          (* proper format for this instruction *)
-            "[Parser.Register; Parser.Comma; Parser.Num]"
-          (* input/wrong list of tokens *)
-            (show_token_list tl)
-        end
+      | (_ as tl) -> begin
+          let fmt = "[Parser.Register; Parser.Comma; Parser.Num]" in
+          fail_w_token v fmt tl end
     end
-
 
   | (Op Str as v) :: tl
   | (Op Ldr as v) :: tl -> begin
       match tl with
       | (Register _ as w) :: Comma :: (Register _ as x) :: Comma 
         :: (Num _ as y) :: _ -> [v; w; x; y] 
-      | (_ as tl) -> failwith begin
-          Printf.sprintf "%s should be followed by:\n\t%s, but found:\n\t%s"
-          (* token *) 
-            (show_token v) 
-          (* proper format for this instruction *)
-            ("[Parser.Register; Parser.Comma; Parser.Register;\n\t\t"
-            ^ "Parser.Comma; Parser.Num]")
-          (* input/wrong list of tokens *)
-            (show_token_list tl)
-        end
+      | (_ as tl) -> 
+        let fmt = ("[Parser.Register; Parser.Comma; Parser.Register;"
+          ^ "\n\t\t Parser.Comma; Parser.Num]") in 
+        fail_w_token v fmt tl
     end
 
   | (Op Ret as v) :: _ 
   | (Op Rti as v) :: _ -> [v]
 
-  | Directive v :: tl -> begin
-      match v, tl with
-      | Orig, (Num _ as w) :: _ -> [Directive v; w]
-      | End, _                  -> [Directive v] 
-      | _                       -> raise Not_found end
+  | (Directive _) as v :: tl -> begin
+      match v with
+      | Directive Orig  -> begin
+          match tl with
+          | (Num _ as w) :: [] -> [v; w]
+          | _ -> fail_w_token v "[Parser.Num]" tl end
+
+      | Directive End   -> begin
+          match tl with
+          | []  -> [v]
+          | _   -> failwith begin
+              Printf.sprintf ("%s should NOT be followed by a token, but found %s") 
+                (* directive *)
+                (show_token v)
+                (* input/wrong list of tokens *)
+                (show_token_list tl)
+          end
+        end
+      | _     -> failwith begin
+          Printf.sprintf "Unrecognized directive %s, found:\n\t%s"
+            (show_token v) (show_token_list (v :: tl)) end
+    end
 
   (* TODO: Label should not raise `Not_found` *)
   | Comma       :: _
   | Register  _ :: _ 
   | Num       _ :: _ 
   | Label     _ :: _ 
-  | [] -> raise Not_found
+
+  | [] -> failwith "Need tokens to parse, cannot parse []"
 
 let full_parse_lines tokens_list = List.map full_parse_line tokens_list
