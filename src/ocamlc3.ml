@@ -4,7 +4,7 @@ type lexed_list   = Lexer.token list  [@@deriving show];;
 print_endline begin
   try
     String.concat "\n" begin
-      "input.asm"
+      "tests/input.asm"
       |> Lexer.lex_file                   (* lex each line *)
       |> List.map show_lexed_list         (* show lexed lines *)
     end
@@ -16,7 +16,7 @@ print_endline "\n";;
 print_endline begin
   try
     String.concat "\n" begin
-      "input.asm"
+      "tests/input.asm"
       |> Lexer.lex_file                   (* lex each line *)
       |> List.map Parser.token_imm_parse  (* parse for each line *)
       |> List.filter (fun x -> x != [])   (* get rid of empty lines *)
@@ -32,7 +32,7 @@ type int_list = string list [@@deriving show];;
 print_endline begin
   try
     show_int_list begin
-      "assembler.asm"
+      "tests/assembler.asm"
       |> Lexer.lex_file                   (* lex each line *)
       |> List.map Parser.token_imm_parse  (* parse for each line *)
       |> List.filter (fun x -> x != [])   (* get rid of empty lines *)
