@@ -17,16 +17,51 @@ let bit_opcode = function
   | Parser.Str  -> 0b0111
   | Parser.Trap -> 0b1111
 
-let get_bit = function
+let bounds_check bits num = 
+  let abs_bound = (1 lsl bits) in
+  if num >= -abs_bound && num <= (abs_bound - 1) then true
+  else false
+
+let get_bit line = 
+  match line with
   | Parser.Op v :: tl  -> begin
     let msb = (bit_opcode v) lsl 12 in
-    match v, tl with
-    | Parser.Add, Parser.Register a 
-               :: Parser.Register b 
-               :: Parser.Register c 
-               :: _ -> begin
-      Printf.sprintf "%X" (msb + (a lsl 9) + (b lsl 6) + c)
+    match v with
+    
+    (* handle either ADD or AND *)
+    | Parser.Add
+    | Parser.And -> begin
+      match tl with
+
+
+      (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
+      (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
+      (* | 0   0   0   1 |     DR    |    SR1    | 0 | 0   0 |    SR2    | *) 
+      |    Parser.Register a 
+        :: Parser.Register b 
+        :: Parser.Register c 
+        :: _  -> begin
+          let bits = msb + (a lsl 9) + (b lsl 6) + c in
+          Printf.sprintf "%X" bits
+      end
+
+      (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
+      (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
+      (* | 0   0   0   1 |     DR    |    SR1    | 1 |       imm5        | *)
+      |    Parser.Register a
+        :: Parser.Register b
+        :: Parser.Num      v
+        :: _ -> begin
+          if (bounds_check 5 v) then begin
+            let bits = msb + (a lsl 9) + (b lsl 6) + (1 lsl 5) + v in
+            Printf.sprintf "%d" bits
+        end
+        else failwith "Immediate value outside range"
+      end
+
+      | _ -> assert false
     end
+
     (* unreachable *)
     | _ -> assert false
   end
