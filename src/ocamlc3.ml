@@ -1,13 +1,17 @@
 type parsed_list  = Parser.token list [@@deriving show];;
 type lexed_list   = Lexer.token list  [@@deriving show];;
 
-(*
-List.map (Printf.printf "%s\n") begin
-  "input.asm"
-  |> Lexer.lex_file                   (* lex each line *)
-  |> List.map show_lexed_list         (* show lexed lines *)
+print_endline begin
+  try
+    String.concat "\n" begin
+      "input.asm"
+      |> Lexer.lex_file                   (* lex each line *)
+      |> List.map show_lexed_list         (* show lexed lines *)
+    end
+  with Failure v -> (Printf.sprintf "Error: %s" v)
 end;;
-*)
+
+print_endline "\n";;
 
 print_endline begin
   try

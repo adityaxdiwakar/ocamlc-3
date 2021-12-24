@@ -5,6 +5,7 @@
     AND     R3, R7, R2
 
     ; with two registers and immediate
+    LABEL:  
     ADD     R2, R5, #-52
     AND     R1, R1, x313
 

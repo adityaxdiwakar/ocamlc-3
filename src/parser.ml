@@ -121,7 +121,7 @@ let fail_w_token token fmt lst =
       (show_token_list lst)
   end
 
-let full_parse_line tokens = 
+let rec full_parse_line tokens = 
   match tokens with
 
   (* ADD or AND following the form of 
@@ -242,11 +242,11 @@ let full_parse_line tokens =
             (show_token v) (show_token_list (v :: tl)) end
     end
 
-  (* TODO: Label should not raise `Not_found` *)
+  | (Label _ as v) :: tl -> if tl == [] then [v] else (v :: full_parse_line tl)
+    
   | Comma       :: _
   | Register  _ :: _ 
   | Num       _ :: _ 
-  | Label     _ :: _ 
 
   | [] -> failwith "Need tokens to parse, cannot parse []"
 
