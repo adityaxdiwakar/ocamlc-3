@@ -1,23 +1,3 @@
-(*   Op Code -> Binary
-ADD  | 0   0   0   1 |
-AND  | 0   1   0   1 |
-BR   | 0   0   0   0 |
-JMP  | 1   1   0   0 |
-JSR  | 0   1   0   0 |
-JSRR | 0   1   0   0 |
-LD   | 0   0   1   0 |
-LDI  | 1   0   1   0 |
-LDR  | 0   1   1   0 |
-LEA  | 1   1   1   0 |
-NOT  | 1   0   0   1 |
-RET  | 1   1   0   0 |
-RTI  | 1   0   0   0 |
-ST   | 0   0   1   1 |
-STI  | 1   0   1   1 |
-STR  | 0   1   1   1 |
-TRAP | 1   1   1   1 |
-N/A  | 1   1   0   1 |  *) 
-
 let bit_opcode = function
   | Parser.Add  -> 0b0001
   | Parser.And  -> 0b0101
@@ -37,4 +17,43 @@ let bit_opcode = function
   | Parser.Str  -> 0b0111
   | Parser.Trap -> 0b1111
 
-let bit_register reg = 1 lsl reg
+let get_bit = function
+  | Parser.Op v :: tl  -> begin
+    let msb = (bit_opcode v) lsl 12 in
+    match v, tl with
+    | Parser.Add, Parser.Register a 
+               :: Parser.Register b 
+               :: Parser.Register c 
+               :: _ -> begin
+      Printf.sprintf "%X" (msb + (a lsl 9) + (b lsl 6) + c)
+    end
+    (* unreachable *)
+    | _ -> assert false
+  end
+  (* unreachable *)
+  | _                 -> assert false
+
+let rec get_bits ?(pc = -1) lines =
+  let nxt_adr = pc + 16 in
+  match lines with
+  | [] -> []
+  | line :: rem -> begin
+    match line with
+    | Parser.Op _ :: _ -> (get_bit line):: (get_bits rem ~pc:nxt_adr)
+    | Parser.Label label :: tl -> begin
+      (* TODO: put label into hashmap of all labels *)
+      (* Hashtbl.put ... *)
+      print_endline label;
+      if tl = [] then get_bits rem ~pc:pc
+      else (get_bit tl) :: (get_bits rem ~pc:nxt_adr)
+    end
+    | Parser.Directive Parser.Orig :: Parser.Num v :: _ -> begin
+      if pc = -1 then get_bits rem ~pc:v (* initialize program counter *)
+      else failwith "Cannot originate inside block"
+    end
+    | Parser.Directive Parser.End :: _ -> begin
+      if pc = -1 then failwith "Cannot end outside of block"
+      else get_bits rem ~pc:(-1) (* uninitialize program counter *)
+    end
+    | _ -> failwith "Unreachable, if you see this, uh-oh D:"
+  end
