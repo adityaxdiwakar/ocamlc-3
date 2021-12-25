@@ -2,15 +2,11 @@ type parsed_list  = Parser.token list [@@deriving show];;
 type lexed_list   = Lexer.token list  [@@deriving show];;
 type int_list     = int list          [@@deriving show];;
 
-print_endline begin
-  try
-    show_int_list begin
-      "tests/input.asm"
-      |> Lexer.lex_file                   (* lex each line *)
-      |> List.map Parser.token_imm_parse  (* parse for each line *)
-      |> List.filter (fun x -> x != [])   (* get rid of empty lines *)
-      |> Parser.full_parse_lines          (* parse every line *)
-      |> Assembler.get_bits
-    end
-  with Failure v -> (Printf.sprintf "Error: %s" v)
-end
+let output func = List.map (fun x -> print_endline (func x))
+
+let full_lex filename       = filename            |> Lexer.lex_file;;
+let full_parse filename     = full_lex filename   |> Parser.parse;;
+let full_assemble filename  = full_parse filename |> Assembler.assemble;;
+
+output show_parsed_list (full_parse "tests/input.asm");;
+print_endline (show_int_list (full_assemble "tests/input.asm"))

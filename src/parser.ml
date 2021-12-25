@@ -109,6 +109,9 @@ let token_imm_parse tokens =
 
   in List.filter_map parse_indv_token tokens
 
+let file_imm_parse lst = List.filter (fun x -> x != []) begin
+    List.map token_imm_parse lst end
+
 let fail_w_token token fmt lst =
   failwith begin 
     Printf.sprintf "%s should be followed by:\n\t%s, but found:\n%s\n"
@@ -264,4 +267,4 @@ let rec full_parse_line tokens =
 
   | [] -> failwith "Need tokens to parse, cannot parse []"
 
-let full_parse_lines tokens_list = List.map full_parse_line tokens_list
+let parse tokens_list = List.map full_parse_line (file_imm_parse tokens_list)

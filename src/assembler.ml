@@ -160,26 +160,26 @@ let get_bit line =
   (* unreachable *)
   | _ -> assert false
 
-let rec get_bits ?(pc = -1) lines =
+let rec assemble ?(pc = -1) lines =
   let nxt_adr = pc + 16 in
   match lines with
   | [] -> []
   | line :: rem -> begin
     match line with
-    | Parser.Op _ :: _ -> (get_bit line):: (get_bits rem ~pc:nxt_adr)
+    | Parser.Op _ :: _ -> (get_bit line):: (assemble rem ~pc:nxt_adr)
     | Parser.Label _ :: tl -> begin
       (* TODO: put label into hashmap of all labels *)
       (* Hashtbl.put ... *)
-      if tl = [] then get_bits rem ~pc:pc
-      else (get_bit tl) :: (get_bits rem ~pc:nxt_adr)
+      if tl = [] then assemble rem ~pc:pc
+      else (get_bit tl) :: (assemble rem ~pc:nxt_adr)
     end
     | Parser.Directive Parser.Orig :: Parser.Num v :: _ -> begin
-      if pc = -1 then get_bits rem ~pc:v (* initialize program counter *)
+      if pc = -1 then assemble rem ~pc:v (* initialize program counter *)
       else failwith "Cannot originate inside block"
     end
     | Parser.Directive Parser.End :: _ -> begin
       if pc = -1 then failwith "Cannot end outside of block"
-      else get_bits rem ~pc:(-1) (* uninitialize program counter *)
+      else assemble rem ~pc:(-1) (* uninitialize program counter *)
     end
     | _ -> assert false
   end
