@@ -163,7 +163,7 @@ let get_bit line =
   end
 
   (* unreachable *)
-  | _                 -> assert false
+  | _ -> assert false
 
 let rec get_bits ?(pc = -1) lines =
   let nxt_adr = pc + 16 in
@@ -186,5 +186,5 @@ let rec get_bits ?(pc = -1) lines =
       if pc = -1 then failwith "Cannot end outside of block"
       else get_bits rem ~pc:(-1) (* uninitialize program counter *)
     end
-    | _ -> failwith "Unreachable, if you see this, uh-oh D:"
+    | _ -> assert false
   end
