@@ -6,15 +6,15 @@
 
     ; with two registers and immediate
     LABEL:  
-    ADD     R2, R5, #-52
-    AND     R1, R1, x313
+    ADD     R2, R5, #12
+    AND     R1, R1, x9
 
     ; not 
     NOT R3, R4
 
     ; branching 
-    BRn     13412
-    BR      x32952
+    BRn     12
+    BR      x32
 
     ; jumping
     JMP     R7

@@ -18,7 +18,7 @@ let bit_opcode = function
   | Parser.Trap -> 0b1111
 
 let bounds_check bits num = 
-  let abs_bound = (1 lsl bits) in
+  let abs_bound = (1 lsl (bits - 1)) in
   if num >= -abs_bound && num <= (abs_bound - 1) then true
   else false
 
@@ -33,17 +33,13 @@ let get_bit line =
     | Parser.And -> begin
       match tl with
 
-
       (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
       (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
       (* | 0   0   0   1 |     DR    |    SR1    | 0 | 0   0 |    SR2    | *) 
       |    Parser.Register a 
         :: Parser.Register b 
         :: Parser.Register c 
-        :: _  -> begin
-          let bits = msb + (a lsl 9) + (b lsl 6) + c in
-          Printf.sprintf "%X" bits
-      end
+        :: _  -> msb + (a lsl 9) + (b lsl 6) + c
 
       (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
       (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
@@ -52,19 +48,120 @@ let get_bit line =
         :: Parser.Register b
         :: Parser.Num      v
         :: _ -> begin
-          if (bounds_check 5 v) then begin
-            let bits = msb + (a lsl 9) + (b lsl 6) + (1 lsl 5) + v in
-            Printf.sprintf "%d" bits
-        end
+        if (bounds_check 5 v) 
+        then msb + (a lsl 9) + (b lsl 6) + (1 lsl 5) + v
         else failwith "Immediate value outside range"
       end
 
       | _ -> assert false
     end
 
-    (* unreachable *)
-    | _ -> assert false
+    (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
+    (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
+    (* | 0   0   0   0 | n | z | p |             PCoffset9             | *)
+    | Parser.Br f -> begin
+      match tl with
+      | Parser.Num v :: _ -> begin
+        if (bounds_check 9 v) 
+        then msb + (f lsl 9)
+        else failwith "PCoffset9 outside range"
+      end
+
+      | _ -> assert false
+    end 
+
+    (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0       *)
+    (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+      *)
+    (* | 1   1   0   0 | 0   0   0 |   BaseR   | 0   0   0   0   0   0 | JMP  *)
+    (* | 0   1   0   0 | 0 | 0   0 |   BaseR   | 0   0   0   0   0   0 | JSRR *)
+    | Parser.Jmp 
+    | Parser.Jsrr -> begin
+      match tl with
+      | Parser.Register a :: _ -> msb + (a lsl 6)
+      | _ -> assert false
+    end
+
+    (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
+    (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
+    (* | 0   1   0   0 | 1 |               PCoffset11                  | *)
+    | Parser.Jsr -> begin
+      match tl with
+      | Parser.Num v :: _ -> begin
+        if (bounds_check 11 v)
+        then msb + (1 lsl 11) + v
+        else failwith "PCoffset11 outside range"
+      end
+      | _ -> assert false
+    end
+
+    (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0       *)
+    (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+      *)
+    (* | 0   0   1   0 |     DR    |             PCoffset9             | LD   *)
+    (* | 1   0   1   0 |     DR    |             PCoffset9             | LDI  *)
+    (* | 1   1   1   0 |     DR    |             PCoffset9             | LEA  *)
+    (* | 0   0   1   1 |     SR    |             PCoffset9             | ST   *)
+    (* | 1   0   1   1 |     SR    |             PCoffset9             | STI  *)
+    | Parser.Ld
+    | Parser.Ldi
+    | Parser.Lea
+    | Parser.St
+    | Parser.Sti -> begin
+        match tl with
+        | Parser.Register a :: Parser.Num v :: _ -> begin
+          if (bounds_check 9 v)
+          then msb + (a lsl 9) + v
+          else failwith "PCOffset9 outside range"
+        end
+        | _ -> assert false
+      end
+    
+    (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0       *)
+    (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+      *)
+    (* | 0   1   1   0 |     DR    |   BaseR   |        offset6        | LDR  *)
+    (* | 0   1   1   1 |     SR    |   BaseR   |        offset6        | STR  *)
+    | Parser.Ldr
+    | Parser.Str -> begin
+      match tl with
+      | Parser.Register a :: Parser.Register b :: Parser.Num v :: _ -> begin
+        if (bounds_check 6 v)
+        then msb + (a lsl 9) + (b lsl 6) + v
+        else failwith "offset6 outside range"
+      end
+      | _ -> assert false
+    end
+
+    (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
+    (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
+    (* | 1   0   0   1 |     DR    |     SR    | 1   1   1   1   1   1 | *) 
+    | Parser.Not -> begin
+      match tl with
+      | Parser.Register a :: Parser.Register b :: _ -> begin
+        msb + (a lsl 9) + (b lsl 6) + 63
+      end
+      | _ -> assert false
+    end
+
+    (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
+    (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
+    (* | 1   0   0   0 | 0   0   0   0   0   0   0   0   0   0   0   0 | *)
+    | Parser.Rti -> msb + (7 lsl 6)
+
+    (*   15  14  13  12  11  10   9   8   7   6   5   4   3   2   1   0  *)
+    (* +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ *)
+    (* | 1   1   0   0 | 0   0   0 | 1   1   1 | 0   0   0   0   0   0 | *)
+    | Parser.Ret -> msb
+
+    | Parser.Trap -> begin
+      match tl with
+      | Parser.Num v :: _ -> begin
+        if (bounds_check 8 v)
+        then msb + v 
+        else failwith "trapvect8 outside range"
+      end
+      | _ -> assert false
+    end
   end
+
   (* unreachable *)
   | _                 -> assert false
 
@@ -75,10 +172,9 @@ let rec get_bits ?(pc = -1) lines =
   | line :: rem -> begin
     match line with
     | Parser.Op _ :: _ -> (get_bit line):: (get_bits rem ~pc:nxt_adr)
-    | Parser.Label label :: tl -> begin
+    | Parser.Label _ :: tl -> begin
       (* TODO: put label into hashmap of all labels *)
       (* Hashtbl.put ... *)
-      print_endline label;
       if tl = [] then get_bits rem ~pc:pc
       else (get_bit tl) :: (get_bits rem ~pc:nxt_adr)
     end

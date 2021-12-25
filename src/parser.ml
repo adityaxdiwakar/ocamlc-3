@@ -193,6 +193,13 @@ let rec full_parse_line tokens =
         end
     end
 
+  (* LD, LDI, LEA, ST, STI following the form of
+   *  (Op Ld) (Register) (Num)
+   *  (Op Ldi) (Register) (Num)
+   *  (Op Lea) (Register) (Num)
+   *  (Op St) (Register) (Num)
+   *  (Op Sti) (Register) (Num)
+   * *)
   | (Op Ld  as v) :: tl
   | (Op Ldi as v) :: tl
   | (Op Lea as v) :: tl
@@ -205,6 +212,10 @@ let rec full_parse_line tokens =
           fail_w_token v fmt tl end
     end
 
+  (* STR, LDR following the form of
+   *  (Op Str) (Register) (Register) (Num)
+   *  (Op Ldr) (Register) (Register) (Num)
+   * *)
   | (Op Str as v) :: tl
   | (Op Ldr as v) :: tl -> begin
       match tl with
@@ -216,6 +227,10 @@ let rec full_parse_line tokens =
         fail_w_token v fmt tl
     end
 
+  (* RET, RTI following the form of
+   *  (Op Ret) 
+   *  (Op Rti)
+   * *)
   | (Op Ret as v) :: _ 
   | (Op Rti as v) :: _ -> [v]
 
