@@ -45,7 +45,6 @@ let opcode_str_to_type = function
   | "BRnz"    -> Br 6
   | "BRnzp" (* synonymous with "BR" *)
   | "BR"      -> Br 7
-  (* finish matching branch statements *)
 
   | "JMP"     -> Jmp
   | "JSRR"    -> Jsrr

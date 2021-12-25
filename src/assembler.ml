@@ -1,20 +1,12 @@
 let bit_opcode = function
-  | Parser.Add  -> 0b0001
-  | Parser.And  -> 0b0101
-  | Parser.Br _ -> 0b0000
-  | Parser.Jmp  -> 0b1100
-  | Parser.Jsr  
-  | Parser.Jsrr -> 0b0100
-  | Parser.Ld   -> 0b0010
-  | Parser.Ldi  -> 0b1010
-  | Parser.Ldr  -> 0b0110
-  | Parser.Lea  -> 0b1110
-  | Parser.Not  -> 0b1001
-  | Parser.Ret  -> 0b1100
-  | Parser.Rti  -> 0b1000
-  | Parser.St   -> 0b0011
-  | Parser.Sti  -> 0b1011
-  | Parser.Str  -> 0b0111
+  | Parser.Add  -> 0b0001   | Parser.And  -> 0b0101
+  | Parser.Br _ -> 0b0000   | Parser.Jmp  -> 0b1100
+  | Parser.Jsr              | Parser.Jsrr -> 0b0100
+  | Parser.Ld   -> 0b0010   | Parser.Ldi  -> 0b1010
+  | Parser.Ldr  -> 0b0110   | Parser.Lea  -> 0b1110
+  | Parser.Not  -> 0b1001   | Parser.Ret  -> 0b1100
+  | Parser.Rti  -> 0b1000   | Parser.St   -> 0b0011
+  | Parser.Sti  -> 0b1011   | Parser.Str  -> 0b0111
   | Parser.Trap -> 0b1111
 
 let bounds_check bits num = 
