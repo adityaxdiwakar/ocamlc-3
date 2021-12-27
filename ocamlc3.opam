@@ -1,0 +1,13 @@
+opam-version: "2.0"
+synopsis: "LC-3 Assembler built in OCaml"
+maintainer: "Aditya Diwakar <aditya@diwakar.io>"
+authors: "Aditya Diwakar <aditya@diwakar.io>"
+license: "Unlicense"
+homepage: "https://github.com/adityaxdiwakar/ocamlc-3"
+bug-reports: "https://github.com/adityaxdiwakar/ocamlc-3/issues"
+depends: ["ppx_deriving"]
+build: [make build]
+dev-repo: "git+https://github.com/adityaxdiwakar/ocamlc-3"
+name: "ocamlc-3"
+version: "~dev"
+
