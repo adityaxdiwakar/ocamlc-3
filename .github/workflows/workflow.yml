@@ -7,7 +7,6 @@ jobs:
     strategy:
       matrix:
         os:
-          - macos-latest
           - ubuntu-latest
         ocaml-compiler:
           - 4.13.x
@@ -22,6 +21,10 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          dune-cache: ${{ matrix.os == 'ubuntu-latest' }}
+
+      - name: Install deps
+        run: opam install . --deps-only --with-test
 
       - name: Build code
         run: opam exec -- make build
