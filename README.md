@@ -1,4 +1,5 @@
 # ocamlc-3 
+![OCaml Version](https://img.shields.io/badge/OCaml-v4.13.1-orange?style=for-the-badge)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/adityaxdiwakar/ocamlc-3/Build%20workflow?style=for-the-badge)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/adityaxdiwakar/ocamlc-3?style=for-the-badge)
 
