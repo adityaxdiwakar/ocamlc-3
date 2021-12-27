@@ -22,6 +22,8 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - run: opam exec -- make build
+      - name: Build code
+        run: opam exec -- make build
 
-      - run: opam exec -- make run
+      - name: Run code
+        run: opam exec -- make run
